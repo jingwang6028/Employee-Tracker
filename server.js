@@ -10,6 +10,7 @@ const db = mysql.createConnection(
     user: "root",
     password: "root12345",
     database: "employee_db",
+    multipleStatements: true,
   },
   console.log("Connecting to the database")
 );
@@ -169,7 +170,42 @@ function addRole() {
 
 // add an employee to employee table
 function addEmployee() {
-  let roleArray;
-  let managerArray;
+  // select role id and title, and employee id and name
+  let query =
+    "SELECT id AS role_id, title FROM role; SELECT id AS manager_id, CONCAT(first_name, ' ', last_name) AS manager FROM employee";
+
+  db.query(query, (err, result) => {
+    let roleArray = result[0];
+    let managerArray = result[1];
+    console.log(roleArray, managerArray);
+
+    // questions for add an employee
+    inquirer
+      .prompt([
+        {
+          type: "input",
+          name: "firstName",
+          message: "What is the employee's first name?",
+        },
+        {
+          type: "input",
+          name: "lastName",
+          message: "What is the employee's last name?",
+        },
+        {
+          type: "list",
+          name: "roleTitle",
+          message: "What is the employee's role?",
+          choices: roleArray,
+        },
+        {
+          type: "list",
+          name: "manager",
+          message: "Who is the employee's manager",
+          choices: managerArray,
+        },
+      ])
+      .then((answers) => {});
+  });
 }
 startQuestions();
