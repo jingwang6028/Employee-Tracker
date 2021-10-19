@@ -153,7 +153,7 @@ function addRole() {
         for (let i = 0; i < departArray.length; i++) {
           if (departmentName == departArray[i].name) {
             departID = departArray[i].id;
-            console.log(departID);
+            //console.log(departID);
           }
         }
 
@@ -177,7 +177,11 @@ function addEmployee() {
   db.query(query, (err, result) => {
     let roleArray = result[0];
     let managerArray = result[1];
-    console.log(roleArray, managerArray);
+    let managerName = managerArray.map(function (manager) {
+      return manager.manager;
+    });
+    // add a none when there is no manager involved
+    manager.unshift("None");
 
     // questions for add an employee
     inquirer
@@ -196,16 +200,20 @@ function addEmployee() {
           type: "list",
           name: "roleTitle",
           message: "What is the employee's role?",
-          choices: roleArray,
+          choices: roleArray.map(function (role) {
+            return role.title;
+          }),
         },
         {
           type: "list",
           name: "manager",
           message: "Who is the employee's manager",
-          choices: managerArray,
+          choices: managerName,
         },
       ])
-      .then((answers) => {});
+      .then(({ firstName, lastName, roleTitle, manager }) => {
+        console.log(answers);
+      });
   });
 }
 startQuestions();
