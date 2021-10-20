@@ -2,13 +2,14 @@
 const inquirer = require("inquirer");
 const mysql = require("mysql2");
 const cTable = require("console.table");
+require("dotenv").config();
 
 // create the connection to db
 const db = mysql.createConnection(
   {
-    host: "localhost",
-    user: "root",
-    password: "root12345",
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
     database: "employee_db",
     multipleStatements: true,
   },
@@ -175,13 +176,14 @@ function addEmployee() {
     "SELECT id AS role_id, title FROM role; SELECT id AS manager_id, CONCAT(first_name, ' ', last_name) AS manager FROM employee";
 
   db.query(query, (err, result) => {
+    if (err) throw err;
     let roleArray = result[0];
     let managerArray = result[1];
-    let managerName = managerArray.map(function (manager) {
-      return manager.manager;
+    let managerName = managerArray.map(function (element) {
+      return element.manager;
     });
     // add a none when there is no manager involved
-    manager.unshift("None");
+    managerName.unshift("None");
 
     // questions for add an employee
     inquirer
@@ -212,8 +214,101 @@ function addEmployee() {
         },
       ])
       .then(({ firstName, lastName, roleTitle, manager }) => {
-        console.log(answers);
+        // console.log(firstName, lastName, roleTitle, manager);
+
+        // get id for roleTitle and managerName
+        let roleID;
+        let managerID;
+
+        for (let i = 0; i < roleArray.length; i++) {
+          if (roleTitle == roleArray[i].title) {
+            roleID = roleArray[i].role_id;
+          }
+        }
+
+        for (let i = 0; i < managerArray.length; i++) {
+          if (manager == managerArray[i].manager) {
+            managerID = managerArray[i].manager_id;
+          }
+        }
+        // console.log(roleID, managerID);
+
+        // insert an employee to employee table
+        let query = `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES("${firstName}","${lastName}", ${roleID}, ${managerID})`;
+
+        db.query(query, (err, result) => {
+          if (err) throw err;
+          startQuestions();
+        });
       });
   });
+}
+
+// update an employee role
+function updateEmployeeRole() {
+  // select role id and title form role table, and employee id and name from employee table
+  let query =
+    "SELECT id AS role_id, title FROM role; SELECT id AS emp_id, CONCAT(first_name, ' ', last_name) AS emp_name FROM employee;";
+
+  db.query(query, (err, result) => {
+    if (err) throw err;
+    let roleArray = result[0];
+    let employeeArray = result[1];
+
+    console.log(roleArray, employeeArray);
+
+    // questions for update employee role
+    inquirer
+      .prompt([
+        {
+          type: "list",
+          name: "employeeName",
+          message: "Which employee's role do you want to update?",
+          choices: employeeArray.map(function (element) {
+            return element.emp_name;
+          }),
+        },
+        {
+          type: "list",
+          name: "roleTitle",
+          message: "Which role do you want to assign the selected employee?",
+          choices: roleArray.map(function (element) {
+            return element.title;
+          }),
+        },
+      ])
+      .then(({ employeeName, roleTitle }) => {
+        // grab employee id and role id based on answer employee name and role title
+        let employeeID;
+        let roleID;
+
+        for (let i = 0; i < employeeArray.length; i++) {
+          if (employeeName == employeeArray[i].emp_name) {
+            employeeID = employeeArray[i].emp_id;
+          }
+        }
+
+        for (let i = 0; i < roleArray.length; i++) {
+          if (roleTitle == roleArray[i].title) {
+            roleID = roleArray[i].role_id;
+          }
+        }
+        //console.log(employeeID, roleID);
+
+        // update selected employee table
+        let query = `UPDATE employee JOIN role ON employee.role_id = role.id SET role_id  = ${roleID} WHERE employee.id = ${employeeID}`;
+
+        db.query(query, (err, result) => {
+          if (err) throw err;
+          console.log("Updated employee's role");
+          startQuestions();
+        });
+      });
+  });
+}
+
+// quit, db connection end
+function quit() {
+  db.end();
 }
 startQuestions();
