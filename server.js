@@ -126,7 +126,7 @@ function addRole() {
   // select all department from department table
   db.query("SELECT * FROM department", function (err, departArray) {
     if (err) throw err;
-    console.log(departArray);
+    //console.log(departArray);
 
     // questions for add a role
     inquirer
@@ -255,7 +255,7 @@ function updateEmployeeRole() {
     let roleArray = result[0];
     let employeeArray = result[1];
 
-    console.log(roleArray, employeeArray);
+    //console.log(roleArray, employeeArray);
 
     // questions for update employee role
     inquirer
